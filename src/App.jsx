@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 // ── Gemini API ──────────────────────────────────────────────────────────────
 async function gemini(prompt, system = "", maxTokens = 2048) {
   const model = "gemini-flash-latest";
-  const key = "AIzaSyCuofULowEF0C1zlQtInf740falDmJL7w0";
+  const key = "AIzaSyBwW2FVP0xvbqI0FXNuYvqduvXCHEpkaqo";
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
     {
