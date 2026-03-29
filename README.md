@@ -25,7 +25,7 @@ The system must support:
 * Topic extraction
 * Question generation
 * Answer scoring
-* Feedback generation
+* LLm Evalutation
 * Result summary
 
 ---
