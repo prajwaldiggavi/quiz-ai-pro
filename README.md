@@ -72,7 +72,7 @@ Unlike traditional quiz systems, QuizAI Pro does not require manually writing qu
 * TXT files
 * CSV files
 * Pasted notes/text
-* Planned: PDF and DOCX
+
 
 ## 📚 Advanced RAG Pipeline
 
@@ -236,8 +236,6 @@ Docker build → Docker container → Run anywhere
 | TXT          | ✅          |
 | CSV          | ✅          |
 | Pasted Notes | ✅          |
-| PDF          | 🚧 Planned |
-| DOCX         | 🚧 Planned |
 
 ---
 
