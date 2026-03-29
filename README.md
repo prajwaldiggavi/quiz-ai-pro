@@ -4,10 +4,6 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/Status-In%20Development-8b5cf6)
-![React](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-61dafb)
-![LLM](https://img.shields.io/badge/LLM-Ollama%20%2F%20Mistral%207B-10b981)
-![License](https://img.shields.io/badge/License-MIT-f59e0b)
 
 ### ✨ Upload a document → Generate questions → Answer → Get AI evaluation, score, rank & feedback
 
