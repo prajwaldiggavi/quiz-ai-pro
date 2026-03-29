@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-
 async function gemini(prompt, system = "", maxTokens = 2048) {
   const model = "gemini-2.5-flash";
-  const key = import.meta.env.VITE_GEMINI_API_KEY; // or process.env.GEMINI_API_KEY
+  const key = import.meta.env.VITE_GEMINI_API_KEY;
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
@@ -31,15 +30,12 @@ async function gemini(prompt, system = "", maxTokens = 2048) {
 
   const data = await res.json();
 
-  console.log(data);
-
   if (!res.ok) {
     throw new Error(data.error?.message || "Gemini API error");
   }
 
   return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 }
-// ── Helpers ──────────────────────────────────────────────────────────────────
 const LETTERS = ["A","B","C","D"];
 const readFileAsText = (file) =>
   new Promise((res, rej) => {
