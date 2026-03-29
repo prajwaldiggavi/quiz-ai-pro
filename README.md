@@ -1,17 +1,13 @@
 # 🚀 QuizAI Pro
-
 ### AI Quiz Application with Document-Based Question Generation & LLM Evaluation
 
-<div align="center">
+✨ Transform study material into an intelligent quiz experience with automatic question generation, AI-based answer evaluation, score analysis, rank system, and personalised feedback.
 
+🌐 Live Demo: https://quiz-ai-pro-airowire.vercel.app/
 
-### ✨ Upload a document → Generate questions → Answer → Get AI evaluation, score, rank & feedback
+📄 Documentation: Report • Research Notes
 
-[🌐 Live Demo – quiz-ai-pro-airowire.vercel.app](https://quiz-ai-pro-airowire.vercel.app/) • [Report](./docs/report.md) • [Research Notes](./docs/research.md)
-
-> 🔗 Deployed on Vercel: [https://quiz-ai-pro-airowire.vercel.app/](https://quiz-ai-pro-airowire.vercel.app/)
-
-</div>
+🚀 Deployment: Live and hosted on Vercel
 
 ---
 
