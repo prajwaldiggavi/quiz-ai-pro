@@ -190,9 +190,11 @@ Docker build → Docker container → Run anywhere
 * Vite
 * CSS / Custom Animations
 
+🧠 LLM Used:
+- Current prototype uses Gemini 2.0 Flash / Gemini 2.5 Flash for rapid development
+- Final open-source version will use Ollama with Mistral 7B or Llama 3
+- 
 ## Backend / AI
-
-* Ollama
 * Mistral 7B or Llama 3
 * Optional prototype: Gemini API during early development
 
@@ -206,7 +208,6 @@ Docker build → Docker container → Run anywhere
 
 * TXT parsing
 * CSV parsing
-* Planned: PDF support
 
 ---
 
@@ -362,12 +363,8 @@ Improvement:
 
 # 📈 Future Improvements
 
-* PDF support
-* DOCX support
 * OCR for scanned notes
-* User login system
 * Save quiz history
-* Export results as PDF
 * Multi-language support
 * Voice-based quiz answering
 * Difficulty adaptation based on performance
