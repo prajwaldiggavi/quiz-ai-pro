@@ -225,66 +225,9 @@ Docker build → Docker container → Run anywhere
 ```
 
 ---
-🧠 How QuizAI Pro Works
+🧠 Workflow
 
-┌──────────────────────┐
-│ 1. Enter Student Name │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ 2. Upload Document   │
-│ TXT / CSV /          │
-│ Paste Notes          │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ 3. Document Ingestion│
-│ - OCR for images     │
-│ - Text extraction    │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ 4. RAG Pipeline      │
-│ - Chunking           │
-│ - Embeddings         │
-│ - Vector Search      │
-│ - Relevant Context   │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ 5. Quiz Configuration│
-│ - No. of Questions   │
-│ - MCQ / Short / Mix  │
-│ - Difficulty Level   │
-│ - Timer Mode         │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ 6. LLM Question Gen  │
-│ Generate questions   │
-│ from detected topics │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ 7. User Answers Quiz │
-│ All questions shown  │
-│ at once, scrollable  │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ 8. AI Evaluation     │
-│ - MCQ auto-check     │
-│ - Short answers via  │
-│   LLM evaluation     │
-└──────────┬───────────┘
-           ↓
-┌──────────────────────┐
-│ 9. Results Dashboard │
-│ - Score              │
-│ - Grade & Rank       │
-│ - Feedback           │
-│ - Charts & Graphs    │
-└──────────────────────┘
+Name Entry → Upload Document → Text Extraction / OCR → RAG Pipeline (Chunking + Embeddings + Vector Search) → Quiz Configuration → AI Question Generation → User Answers → AI Evaluation → Score, Rank & Feedback
 
 # 📂 Supported File Types
 
