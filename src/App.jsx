@@ -29,8 +29,8 @@ async function gemini(prompt, system = "", maxTokens = 2048) {
   return data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 }
 
-// ─── MLLM / Vision: send image base64 to Gemini vision ───────────────────
-async function geminiVision(base64Image, mimeType, prompt) {
+// ─── MLLM / Vision: send image OR PDF base64 to Gemini vision ─────────────
+async function geminiVision(base64Data, mimeType, prompt) {
   const model = "gemini-2.5-flash";
   const key = import.meta.env.VITE_GEMINI_API_KEY?.trim();
   if (!key) throw new Error("Missing VITE_GEMINI_API_KEY in .env");
@@ -43,7 +43,7 @@ async function geminiVision(base64Image, mimeType, prompt) {
         contents: [{
           role: "user",
           parts: [
-            { inline_data: { mime_type: mimeType, data: base64Image } },
+            { inline_data: { mime_type: mimeType, data: base64Data } },
             { text: prompt }
           ]
         }],
@@ -122,14 +122,12 @@ function cosineSimilarity(a, b) {
 // ─────────────────────────────────────────────
 class VectorStore {
   constructor() {
-    // Simulates MongoDB collection with vector index
-    this._collection = [];    // { _id, chunkId, text, vector, metadata }
+    this._collection = [];
     this._vocab = null;
     this._idf = null;
     this._dbName = "quizai_rag";
     this._collName = "chunks";
   }
-  // MongoDB: db.chunks.insertMany(docs)
   insertMany(chunks, vocab, idf) {
     this._vocab = vocab;
     this._idf = idf;
@@ -141,7 +139,6 @@ class VectorStore {
       metadata: { wordStart: c.wordStart, length: c.text.split(" ").length }
     }));
   }
-  // MongoDB: db.chunks.aggregate([{ $vectorSearch: {...} }])
   vectorSearch(queryText, topK = 4) {
     if (!this._collection.length || !this._vocab) return [];
     const qVec = tfIdfVector(queryText, this._vocab, this._idf);
@@ -157,19 +154,24 @@ class VectorStore {
 const vectorStore = new VectorStore();
 
 // ─────────────────────────────────────────────
-//  OCR  — extract text from image via Gemini Vision
+//  OCR  — extract text from image OR PDF via Gemini Vision
 // ─────────────────────────────────────────────
-async function ocrImage(base64, mime) {
-  return await geminiVision(base64, mime,
-    "Extract ALL text visible in this image. Return plain text only, preserving structure. If it's a diagram or chart, describe it then extract any text labels."
-  );
+async function ocrFile(base64, mime) {
+  const isPDF = mime === "application/pdf";
+  const prompt = isPDF
+    ? "Extract ALL text from this PDF document. Return plain text only, preserving the logical reading order and structure. Include all headings, paragraphs, tables (as text), and any visible text labels."
+    : "Extract ALL text visible in this image. Return plain text only, preserving structure. If it's a diagram or chart, describe it then extract any text labels.";
+  return await geminiVision(base64, mime, prompt);
 }
+
+// kept for backward compat
+const ocrImage = ocrFile;
 
 // ─────────────────────────────────────────────
 //  AI RECOMMENDATION ENGINE
 // ─────────────────────────────────────────────
 async function generateRecommendations(topicBreakdown, userName, score) {
-  const weakTopics = topicBreakdown.filter(t => t.pct < 60).map(t => `${t.topic} (${t.pct}%)`).join(", ");
+  const weakTopics   = topicBreakdown.filter(t => t.pct < 60).map(t => `${t.topic} (${t.pct}%)`).join(", ");
   const strongTopics = topicBreakdown.filter(t => t.pct >= 80).map(t => `${t.topic} (${t.pct}%)`).join(", ");
   const raw = await gemini(
     `Student: ${userName}. Score: ${score}%.\nWeak areas: ${weakTopics || "none"}.\nStrong areas: ${strongTopics || "none"}.\n\nReturn ONLY a JSON array of exactly 4 recommendations:
@@ -211,7 +213,7 @@ const parseJSON = raw => {
   try { return JSON.parse(raw.replace(/```json|```/gi, "").trim()); } catch { return null; }
 };
 
-// ─── MongoDB stub (logs to console as if real) ────────────────────────────
+// ─── MongoDB stub ─────────────────────────────────────────────────────────
 const MongoDB = {
   sessions: JSON.parse(sessionStorage.getItem("mongo_sessions") || "[]"),
   save(doc) {
@@ -233,7 +235,7 @@ const saveLB = entry => {
 };
 
 // ─────────────────────────────────────────────
-//  CSS  (original design preserved, minimal additions)
+//  CSS
 // ─────────────────────────────────────────────
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Playfair+Display:ital,wght@0,700;0,900;1,600;1,700&display=swap');
@@ -372,6 +374,8 @@ body{background:var(--ink);color:var(--text);font-family:'Syne',system-ui,sans-s
 .dz-sub{font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);margin-bottom:14px}
 .dz-chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 .dz-chip{font-family:'DM Mono',monospace;font-size:9px;padding:3px 10px;border-radius:20px;background:rgba(124,58,237,0.07);border:1px solid var(--rim);color:var(--text3);letter-spacing:0.06em}
+/* PDF chip gets a distinct red tint */
+.dz-chip.pdf{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.2);color:#FCA5A5}
 
 .file-pill{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:16px;border:1px solid rgba(124,58,237,0.22);background:rgba(124,58,237,0.05);margin-bottom:16px;animation:slide-r 0.35s ease both}
 .fp-icon{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,rgba(124,58,237,0.3),rgba(6,182,212,0.15));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
@@ -410,8 +414,9 @@ body{background:var(--ink);color:var(--text);font-family:'Syne',system-ui,sans-s
 .cfg-sel:focus{border-color:rgba(124,58,237,0.4);box-shadow:0 0 0 3px rgba(124,58,237,0.08)}
 .sec-div{height:1px;background:var(--rim);margin:28px 0}
 
-/* OCR notice */
+/* OCR / PDF notice */
 .ocr-notice{margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);font-family:'DM Mono',monospace;font-size:10px;color:rgba(16,185,129,0.8);display:flex;align-items:center;gap:8px}
+.pdf-notice{background:rgba(239,68,68,0.05);border-color:rgba(239,68,68,0.2);color:#FCA5A5}
 
 /* LOADING */
 .load-screen{text-align:center;padding:100px 24px}
@@ -617,20 +622,20 @@ body{background:var(--ink);color:var(--text);font-family:'Syne',system-ui,sans-s
 }
 `;
 
-// ─── TECH STACK CHIPS config ──────────────────────────────────────────────
+// ─── TECH STACK CHIPS ─────────────────────────────────────────────────────
 const TECH_CHIPS = [
   { label: "RAG",         color: "#818CF8", bg: "rgba(129,140,248,0.12)" },
   { label: "Chunking",    color: "#34D399", bg: "rgba(52,211,153,0.12)"  },
   { label: "Embeddings",  color: "#E879F9", bg: "rgba(232,121,249,0.12)" },
   { label: "VectorDB",    color: "#38BDF8", bg: "rgba(56,189,248,0.12)"  },
   { label: "OCR",         color: "#FBBF24", bg: "rgba(251,191,36,0.12)"  },
+  { label: "PDF Vision",  color: "#F87171", bg: "rgba(248,113,113,0.12)" },
   { label: "Vision MLLM", color: "#FB923C", bg: "rgba(251,146,60,0.12)"  },
   { label: "Gemini API",  color: "#60A5FA", bg: "rgba(96,165,250,0.12)"  },
   { label: "MongoDB",     color: "#4ADE80", bg: "rgba(74,222,128,0.12)"  },
   { label: "Recharts",    color: "#F472B6", bg: "rgba(244,114,182,0.12)" },
   { label: "AI Reco",     color: "#A78BFA", bg: "rgba(167,139,250,0.12)" },
   { label: "Docker",      color: "#67E8F9", bg: "rgba(103,232,249,0.12)" },
-  { label: "Git/CI",      color: "#FCA5A5", bg: "rgba(252,165,165,0.12)" },
 ];
 
 const GEN_STEPS = [
@@ -647,34 +652,35 @@ const GEN_STEPS = [
 //  MAIN APP
 // ─────────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [stage, setStage]       = useState("name");
-  const [userName, setUser]     = useState("");
-  const [docText, setDocText]   = useState("");
-  const [paste, setPaste]       = useState("");
-  const [fileName, setFile]     = useState("");
-  const [numQ, setNumQ]         = useState("5");
-  const [qType, setQType]       = useState("mixed");
-  const [difficulty, setDiff]   = useState("mixed");
-  const [timerOn, setTimerOn]   = useState(false);
-  const [timeLimit, setTimeL]   = useState("300");
-  const [drag, setDrag]         = useState(false);
-  const [genStep, setGenStep]   = useState(0);
-  const [evalPct, setEvalPct]   = useState(0);
-  const [evalTxt, setEvalTxt]   = useState("");
-  const [questions, setQ]       = useState([]);
-  const [topics, setTopics]     = useState([]);
-  const [answers, setAns]       = useState({});
-  const [confidence, setConf]   = useState({});
-  const [flagged, setFlagged]   = useState({});
-  const [feedbacks, setFb]      = useState({});
-  const [summary, setSummary]   = useState("");
-  const [timer, setTimer]       = useState(0);
-  const [timerActive, setTA]    = useState(false);
-  const [toast, setToast]       = useState("");
-  const [lb, setLB]             = useState(LEADERBOARD);
-  const [ragInfo, setRagInfo]   = useState(null);   // { chunks, vocab, idf }
-  const [recos, setRecos]       = useState([]);
+  const [stage, setStage]         = useState("name");
+  const [userName, setUser]       = useState("");
+  const [docText, setDocText]     = useState("");
+  const [paste, setPaste]         = useState("");
+  const [fileName, setFile]       = useState("");
+  const [numQ, setNumQ]           = useState("5");
+  const [qType, setQType]         = useState("mixed");
+  const [difficulty, setDiff]     = useState("mixed");
+  const [timerOn, setTimerOn]     = useState(false);
+  const [timeLimit, setTimeL]     = useState("300");
+  const [drag, setDrag]           = useState(false);
+  const [genStep, setGenStep]     = useState(0);
+  const [evalPct, setEvalPct]     = useState(0);
+  const [evalTxt, setEvalTxt]     = useState("");
+  const [questions, setQ]         = useState([]);
+  const [topics, setTopics]       = useState([]);
+  const [answers, setAns]         = useState({});
+  const [confidence, setConf]     = useState({});
+  const [flagged, setFlagged]     = useState({});
+  const [feedbacks, setFb]        = useState({});
+  const [summary, setSummary]     = useState("");
+  const [timer, setTimer]         = useState(0);
+  const [timerActive, setTA]      = useState(false);
+  const [toast, setToast]         = useState("");
+  const [lb, setLB]               = useState(LEADERBOARD);
+  const [ragInfo, setRagInfo]     = useState(null);
+  const [recos, setRecos]         = useState([]);
   const [ocrActive, setOcrActive] = useState(false);
+  const [ocrType, setOcrType]     = useState("image"); // "image" | "pdf"
 
   const fileRef  = useRef();
   const timerRef = useRef();
@@ -692,18 +698,41 @@ export default function App() {
     return () => clearTimeout(timerRef.current);
   }, [timer, timerActive]);
 
-  // ── File upload — detects images for OCR/MLLM ──
+  // ── File upload — supports text, images (OCR), and PDFs (Gemini Vision) ──
   const handleFile = async f => {
     if (!f) return;
-    const isImage = f.type.startsWith("image/");
-    const isPDF   = f.type === "application/pdf";
 
-    if (isImage) {
-      msg("Image detected — running OCR + Vision…", "👁");
+    const isImage = f.type.startsWith("image/");
+    const isPDF   = f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
+
+    if (isPDF) {
+      // ── PDF: send as base64 to Gemini Vision which natively understands PDFs ──
+      msg("PDF detected — extracting text via Gemini Vision…", "📄");
       setOcrActive(true);
+      setOcrType("pdf");
       try {
         const b64 = await readFileAsBase64(f);
-        const extracted = await ocrImage(b64, f.type);
+        const extracted = await ocrFile(b64, "application/pdf");
+        if (!extracted || extracted.trim().length < 20) {
+          throw new Error("No text could be extracted from this PDF.");
+        }
+        setDocText(extracted);
+        setFile(f.name + " [PDF→text]");
+        msg(`PDF extracted — ${extracted.split(/\s+/).filter(Boolean).length.toLocaleString()} words found`, "✅");
+      } catch (e) {
+        msg("PDF extraction failed: " + e.message, "❌");
+      }
+      setOcrActive(false);
+      setOcrType("image");
+
+    } else if (isImage) {
+      // ── Image: OCR via Gemini Vision ──
+      msg("Image detected — running OCR + Vision…", "👁");
+      setOcrActive(true);
+      setOcrType("image");
+      try {
+        const b64 = await readFileAsBase64(f);
+        const extracted = await ocrFile(b64, f.type);
         setDocText(extracted);
         setFile(f.name + " [OCR]");
         msg("OCR complete — text extracted!", "✅");
@@ -711,7 +740,9 @@ export default function App() {
         msg("OCR failed: " + e.message, "❌");
       }
       setOcrActive(false);
+
     } else {
+      // ── Plain text file ──
       try {
         const t = await readFileAsText(f);
         setDocText(t);
@@ -735,7 +766,6 @@ export default function App() {
         const idf    = buildIdf(chunks, vocab);
         vectorStore.insertMany(chunks, vocab, idf);
         setRagInfo({ chunks: chunks.length, vocab: Object.keys(vocab).length, idf });
-        // Also extract topics from first chunk
         if (topics.length === 0) extractTopics();
         console.log("[MongoDB]", vectorStore.dbInfo);
       }, 800);
@@ -756,14 +786,13 @@ export default function App() {
     } catch {}
   };
 
-  // ── Generate quiz using RAG: retrieve relevant chunks per topic ──
+  // ── Generate quiz using RAG ──
   const generate = async () => {
     const text = activeText.trim();
     if (!text || text.length < 50) { msg("Please provide at least 50 characters", "⚠"); return; }
     setStage("gen-loading"); setGenStep(0);
     const iv = setInterval(() => setGenStep(s => Math.min(s + 1, GEN_STEPS.length - 1)), 900);
 
-    // RAG: retrieve top-k relevant chunks as context
     const topicQuery = topics.slice(0, 3).join(" ") || text.slice(0, 200);
     const retrieved  = vectorStore.vectorSearch(topicQuery, 5);
     const ragContext = retrieved.map(d => d.text).join("\n\n---\n\n");
@@ -843,7 +872,6 @@ Rules:
     const maxPts = questions.length * 10;
     const pct    = Math.round((totPts / maxPts) * 100);
 
-    // Topic breakdown for recommendations
     const tbMap = {};
     questions.forEach((q, i) => {
       if (!tbMap[q.topic]) tbMap[q.topic] = { total: 0, got: 0 };
@@ -864,20 +892,12 @@ Rules:
     } catch { setSummary(`${userName}, you scored ${pct}%. Review the questions below to deepen your understanding.`); }
 
     tick("Generating AI recommendations…");
-    try {
-      const r = await generateRecommendations(tbArr, userName, pct);
-      setRecos(r);
-    } catch {}
+    try { const r = await generateRecommendations(tbArr, userName, pct); setRecos(r); } catch {}
 
-    // MongoDB: save session
     MongoDB.save({
       _id: `session_${Date.now()}`,
-      user: userName,
-      score: pct,
-      pts: totPts,
-      max: maxPts,
-      rank: getRank(pct).rank,
-      topics: tbArr,
+      user: userName, score: pct, pts: totPts, max: maxPts,
+      rank: getRank(pct).rank, topics: tbArr,
       ragChunks: ragInfo?.chunks || 0,
       timestamp: new Date().toISOString(),
     });
@@ -910,13 +930,11 @@ Rules:
 
   // ── Chart data ──
   const radarData = useMemo(() => topicBreakdown().map(t => ({ topic: t.topic.slice(0, 12), score: t.pct, full: 100 })), [feedbacks]);
-
-  const barData = useMemo(() => [
+  const barData   = useMemo(() => [
     { name: "Correct", value: nCorr, fill: "#34D399" },
     { name: "Partial", value: nPart, fill: "#FBBF24" },
     { name: "Wrong",   value: nWrong, fill: "#F87171" },
   ], [feedbacks]);
-
   const diffData = useMemo(() => {
     const map = { easy: { correct: 0, total: 0 }, medium: { correct: 0, total: 0 }, hard: { correct: 0, total: 0 } };
     questions.forEach((q, i) => {
@@ -933,7 +951,7 @@ Rules:
       `QUIZ RESULTS — ${userName}`, `Date: ${new Date().toLocaleString()}`,
       `Score: ${totalPts}/${maxPts} (${pct}%) — Rank: ${rank.rank} (${rank.label})`,
       `Correct: ${nCorr} | Partial: ${nPart} | Incorrect: ${nWrong}`, "",
-      `RAG: ${ragInfo?.chunks || 0} chunks indexed, ${ragInfo?.vocab || 0} vocab terms`,
+      `RAG: ${ragInfo?.chunks || 0} chunks, ${ragInfo?.vocab || 0} vocab terms`,
       `MongoDB: ${MongoDB.sessions.length} sessions stored`, "",
       "=== TOPIC BREAKDOWN ===",
       ...tb.map(t => `${t.topic}: ${t.pct}% (${t.got}/${t.total})`), "",
@@ -965,11 +983,10 @@ Rules:
     setStage("quiz");
   };
 
-  const stageMap = { name: 0, upload: 1, "gen-loading": 2, quiz: 2, "eval-loading": 3, results: 3 };
-  const si = stageMap[stage] ?? 0;
+  const stageMap    = { name: 0, upload: 1, "gen-loading": 2, quiz: 2, "eval-loading": 3, results: 3 };
+  const si          = stageMap[stage] ?? 0;
   const stageLabels = ["Profile", "Document", "Quiz", "Results"];
 
-  // ── Reco styling ──
   const recoStyle = type => {
     const m = { review: { color: "#F87171", bg: "rgba(248,113,113,0.08)" }, practice: { color: "#FBBF24", bg: "rgba(251,191,36,0.08)" }, advance: { color: "#34D399", bg: "rgba(52,211,153,0.08)" }, resource: { color: "#818CF8", bg: "rgba(129,140,248,0.08)" } };
     return m[type] || m.review;
@@ -1044,14 +1061,14 @@ Rules:
             <div className="hero">
               <div className="hero-eyebrow">
                 <span className="hero-eyebrow-dot"/>
-                RAG · Embeddings · Vision OCR · MongoDB · Recharts
+                RAG · Embeddings · Vision OCR · PDF · MongoDB · Recharts
               </div>
               <h1 className="hero-h">
                 <span className="l1">Learn smarter with</span>
                 <span className="l2">intelligent quizzing</span>
               </h1>
               <p className="hero-p">
-                Upload any document or image. The RAG pipeline chunks it, builds TF-IDF embeddings, indexes them in a vector store, retrieves the most relevant passages, then calls Gemini to generate and grade questions — all results saved to MongoDB.
+                Upload any document, image, or PDF. The RAG pipeline chunks it, builds TF-IDF embeddings, indexes them in a vector store, retrieves the most relevant passages, then calls Gemini to generate and grade questions — all results saved to MongoDB.
               </p>
               <div className="name-card">
                 <label className="nc-label" htmlFor="uname">Your name to get started</label>
@@ -1066,9 +1083,9 @@ Rules:
               <div className="feat-grid">
                 {[
                   { ico: "🔪", txt: "Text Chunking" }, { ico: "🔢", txt: "Embeddings" },
-                  { ico: "🔍", txt: "Vector Search" }, { ico: "👁",  txt: "OCR + Vision" },
-                  { ico: "🧠", txt: "Gemini LLM" },    { ico: "🍃", txt: "MongoDB" },
-                  { ico: "📊", txt: "Recharts viz" },  { ico: "🤖", txt: "AI Reco Engine" },
+                  { ico: "🔍", txt: "Vector Search" }, { ico: "📄", txt: "PDF Support"  },
+                  { ico: "👁", txt: "OCR + Vision" },  { ico: "🧠", txt: "Gemini LLM"  },
+                  { ico: "📊", txt: "Recharts viz" },  { ico: "🤖", txt: "AI Reco"      },
                 ].map(f => (
                   <div key={f.txt} className="feat-item">
                     <span className="feat-ico">{f.ico}</span>
@@ -1085,7 +1102,7 @@ Rules:
               <div className="up-header">
                 <div className="up-greeting">Welcome, {userName}</div>
                 <h2 className="up-title">Upload your document</h2>
-                <p className="up-sub">Text files, images (OCR), or paste directly. The RAG pipeline will chunk, embed and index automatically.</p>
+                <p className="up-sub">Text files, PDFs, images (OCR), or paste directly. The RAG pipeline will chunk, embed and index automatically.</p>
               </div>
 
               {/* RAG Status Panel */}
@@ -1103,7 +1120,7 @@ Rules:
 
               {fileName && (
                 <div className="file-pill">
-                  <div className="fp-icon">📄</div>
+                  <div className="fp-icon">{fileName.includes("[PDF") ? "📄" : fileName.includes("[OCR]") ? "🖼️" : "📝"}</div>
                   <div className="fp-info">
                     <div className="fp-name">{fileName}</div>
                     <div className="fp-meta">{(charCount / 1024).toFixed(1)} KB · {wordCount.toLocaleString()} words · {sentCount} sentences</div>
@@ -1112,9 +1129,13 @@ Rules:
                 </div>
               )}
 
+              {/* OCR / PDF processing notice */}
               {ocrActive && (
-                <div className="ocr-notice">
-                  <span>👁</span> Running OCR + Gemini Vision on image…
+                <div className={`ocr-notice ${ocrType === "pdf" ? "pdf-notice" : ""}`}>
+                  <span>{ocrType === "pdf" ? "📄" : "👁"}</span>
+                  {ocrType === "pdf"
+                    ? "Extracting text from PDF via Gemini Vision — this may take a moment for large files…"
+                    : "Running OCR + Gemini Vision on image…"}
                 </div>
               )}
 
@@ -1134,17 +1155,22 @@ Rules:
                 onDrop={e => { e.preventDefault(); setDrag(false); handleFile(e.dataTransfer.files[0]); }}>
                 <div className="dz-center">
                   <div className="dz-icon-ring">{drag ? "🎯" : "📂"}</div>
-                  <div className="dz-title">{drag ? "Drop it!" : "Drop document or image here"}</div>
-                  <div className="dz-sub">or click to browse · images use Gemini Vision OCR</div>
+                  <div className="dz-title">{drag ? "Drop it!" : "Drop document, PDF, or image here"}</div>
+                  <div className="dz-sub">or click to browse · PDFs & images use Gemini Vision</div>
                   <div className="dz-chips">
-                    {[".txt", ".md", ".csv", ".json", ".log", ".png", ".jpg", ".webp"].map(f => (
+                    {[".txt", ".md", ".csv", ".json", ".log"].map(f => (
+                      <span key={f} className="dz-chip">{f}</span>
+                    ))}
+                    <span className="dz-chip pdf">.pdf</span>
+                    {[".png", ".jpg", ".webp"].map(f => (
                       <span key={f} className="dz-chip">{f}</span>
                     ))}
                   </div>
                 </div>
               </div>
+              {/* ↑ accept now includes .pdf */}
               <input ref={fileRef} type="file"
-                accept=".txt,.md,.csv,.json,.log,.png,.jpg,.jpeg,.webp,.gif"
+                accept=".txt,.md,.csv,.json,.log,.pdf,.png,.jpg,.jpeg,.webp,.gif"
                 style={{ display: "none" }} onChange={e => handleFile(e.target.files[0])}/>
 
               <div className="or-bar">or paste text directly</div>
@@ -1213,7 +1239,7 @@ Rules:
               </div>
 
               <div style={{ display: "flex", gap: 10, marginTop: 24, flexWrap: "wrap" }}>
-                <button className="btn btn-prime" onClick={generate} disabled={!activeText.trim()}>
+                <button className="btn btn-prime" onClick={generate} disabled={!activeText.trim() || ocrActive}>
                   ⚡ Generate Quiz
                 </button>
                 {activeText.length > 100 && topics.length === 0 && (
@@ -1261,11 +1287,11 @@ Rules:
               </div>
 
               {questions.map((q, qi) => {
-                const ua       = answers[qi];
-                const hasAns   = ua !== undefined && ua !== "";
+                const ua        = answers[qi];
+                const hasAns    = ua !== undefined && ua !== "";
                 const isFlagged = flagged[qi];
-                const conf     = confidence[qi];
-                const dc       = diffColor[q.difficulty] || "var(--text3)";
+                const conf      = confidence[qi];
+                const dc        = diffColor[q.difficulty] || "var(--text3)";
                 return (
                   <div key={qi} id={`q${qi}`}
                     className={`q-card ${hasAns ? "answered" : ""} ${isFlagged ? "flagged" : ""}`}
@@ -1341,12 +1367,10 @@ Rules:
                 <div className="stat"><div className="stat-n b">{flaggedCount}</div><div className="stat-l">Flagged</div></div>
               </div>
 
-              {/* ── RECHARTS VISUALISATIONS ── */}
+              {/* Charts */}
               <div className="charts-section">
                 <div className="section-hd">Performance Analytics · Recharts</div>
                 <div className="chart-grid">
-
-                  {/* Radar — topic scores */}
                   {radarData.length > 1 && (
                     <div className="chart-card">
                       <div className="chart-title">Topic Radar</div>
@@ -1360,8 +1384,6 @@ Rules:
                       </ResponsiveContainer>
                     </div>
                   )}
-
-                  {/* Bar — correct / partial / wrong */}
                   <div className="chart-card">
                     <div className="chart-title">Answer Breakdown</div>
                     <ResponsiveContainer width="100%" height={220}>
@@ -1371,15 +1393,11 @@ Rules:
                         <YAxis tick={{ fill: "#3D3860", fontSize: 10 }}/>
                         <Tooltip contentStyle={{ background: "#0E0C1E", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#EEE9FF", fontSize: 12 }}/>
                         <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                          {barData.map((entry, i) => (
-                            <rect key={i} fill={entry.fill}/>
-                          ))}
+                          {barData.map((entry, i) => <rect key={i} fill={entry.fill}/>)}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-
-                  {/* Line — difficulty performance */}
                   <div className="chart-card full">
                     <div className="chart-title">Score by Difficulty</div>
                     <ResponsiveContainer width="100%" height={160}>
@@ -1392,7 +1410,6 @@ Rules:
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-
                 </div>
               </div>
 
@@ -1415,7 +1432,6 @@ Rules:
                 ))}
               </div>
 
-              {/* AI Summary */}
               {summary && (
                 <div className="ai-card">
                   <div className="ai-lbl">AI Performance Summary · Gemini</div>
@@ -1423,7 +1439,6 @@ Rules:
                 </div>
               )}
 
-              {/* AI Recommendations */}
               {recos.length > 0 && (
                 <>
                   <div className="section-hd">AI Recommendations · Recommendation Engine</div>
@@ -1450,15 +1465,15 @@ Rules:
               )}
 
               <div className="export-row">
-                <div className="er-label">📤 Download detailed results report · includes RAG stats & recommendations</div>
+                <div className="er-label">📤 Download detailed results · includes RAG stats & recommendations</div>
                 <button className="btn btn-ghost btn-sm" onClick={exportResults}>Export .txt</button>
               </div>
 
               <div className="section-hd">Detailed Question Review</div>
               {questions.map((q, i) => {
-                const fb       = feedbacks[i];
-                const ua       = answers[i];
-                const conf     = confidence[i];
+                const fb        = feedbacks[i];
+                const ua        = answers[i];
+                const conf      = confidence[i];
                 const isFlagged = flagged[i];
                 return (
                   <div key={i} className={`rev-card ${fb?.status || ""}`} style={{ animationDelay: `${i * 0.04}s` }}>
