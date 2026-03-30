@@ -32,7 +32,7 @@ QuizAI Pro is a modern AI-powered quiz platform that transforms uploaded study m
 
 Users can:
 
-* Upload TXT, CSV, or paste notes
+* Upload TXT, CSV,PDF, or paste notes
 * Enter their name and start instantly
 * Get automatically generated questions
 * Answer all questions in one scrollable exam-like interface
@@ -66,6 +66,7 @@ Unlike traditional quiz systems, QuizAI Pro does not require manually writing qu
 ## 📄 Supported Inputs
 
 * TXT files
+* PDF
 * CSV files
 * Pasted notes/text
 
@@ -234,7 +235,7 @@ Name Entry → Upload Document → Text Extraction / OCR → RAG Pipeline (Chunk
 | File Type    | Supported  |
 | ------------ | ---------- |
 | TXT          | ✅          |
-| CSV          | ✅          |
+| PDF          | ✅          |
 | Pasted Notes | ✅          |
 
 ---
