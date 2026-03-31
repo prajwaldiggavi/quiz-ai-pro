@@ -1,143 +1,301 @@
 # 🚀 QuizAI Pro
-### AI Quiz Application with Document-Based Question Generation & LLM Evaluation
 
-✨ Transform study material into an intelligent quiz experience with automatic question generation, AI-based answer evaluation, score analysis, rank system, and personalised feedback.
+## AI Quiz Application with Document-Based Question Generation & LLM Evaluation
 
-🌐 Live Demo: https://quiz-ai-pro-airowire.vercel.app/
+Transform notes, PDFs, and study material into an intelligent quiz platform with automatic question generation, AI-based answer evaluation, scoring, ranking, topic analysis, and personalized feedback.
 
-📄 Documentation: Report • Research Notes
+---
 
-🚀 Deployment: Live and hosted on Vercel
+## 🌐 Live Demo
+
+[https://quiz-ai-pro-airowire.vercel.app/](https://quiz-ai-pro-airowire.vercel.app/)
 
 ---
 
 # 📌 Problem Statement
 
-Build a quiz application that accepts a user-provided document, automatically generates topic-based questions, and evaluates user answers using an LLM.
+Build a quiz application that accepts a user-provided document, automatically extracts important topics, generates topic-based questions, evaluates answers using AI, and provides scores, explanations, recommendations, and performance analytics.
 
-The system must support:
+The project supports:
 
-* Document ingestion
-* Topic extraction
-* Question generation
-* Answer scoring
-* LLm Evalutation
-* Result summary
+* Document Upload
+* Topic Extraction
+* Question Generation
+* Subjective and Objective Evaluation
+* Ranking and Score Calculation
+* Personalized Feedback
+* Topic-wise Analysis
 
 ---
 
 # 🌟 Project Overview
 
-QuizAI Pro is a modern AI-powered quiz platform that transforms uploaded study material into an interactive quiz.
+QuizAI Pro is an AI-powered quiz platform that converts uploaded notes and documents into an interactive exam-like experience.
 
 Users can:
 
-* Upload TXT, CSV,PDF, or paste notes
-* Enter their name and start instantly
-* Get automatically generated questions
-* Answer all questions in one scrollable exam-like interface
-* Submit once for bulk AI evaluation
-* Receive marks, grade, rank, feedback, and personalised suggestions
+* Upload TXT, CSV, and PDF files
+* Paste notes directly
+* Choose number of questions
+* Select difficulty level
+* Select MCQ, Short Answer, or Mixed Mode
+* Answer all questions in one interface
+* Submit once for full AI evaluation
+* Get score, percentage, rank, explanation, and recommendations
 
-Unlike traditional quiz systems, QuizAI Pro does not require manually writing questions.
+Unlike traditional quiz systems, QuizAI Pro creates questions directly from the uploaded content using Retrieval-Augmented Generation (RAG).
 
 ---
 
-# 🎯 Key Features
+# ✨ Core Features
 
-## 🧠 Smart Question Generation
+## 🧠 Intelligent Question Generation
 
-* Generate quizzes directly from uploaded study material
-* User can choose:
+* Automatic topic-based question generation
+* Uses only relevant parts of the uploaded document
+* Difficulty Levels:
 
-  * Number of questions
-  * Question type:
+  * Easy
+  * Medium
+  * Hard
+* Question Modes:
 
-    * MCQ only
-    * Short Answer only
-    * Mixed
-  * Difficulty level:
+  * MCQ Only
+  * Short Answer Only
+  * Mixed
+* User can select 5–20 questions
 
-    * Easy
-    * Medium
-    * Hard
-* Topic-based question generation from the most relevant parts of the document
+---
 
-## 📄 Supported Inputs
+## 📄 Supported Input Types
 
-* TXT files
-* PDF
-* CSV files
-* Pasted notes/text
+* TXT Files
+* CSV Files
+* PDF Files
+* Direct Text / Notes Paste
 
+---
 
-## 📚 Advanced RAG Pipeline
-
-The project uses a complete Retrieval-Augmented Generation pipeline:
+# 📚 Advanced RAG Pipeline
 
 ```text
-Document
-   ↓
+Uploaded Document
+        ↓
+Text Extraction
+        ↓
 Text Chunking
-   ↓
-Embeddings
-   ↓
-Vector Database
-   ↓
+        ↓
+TF-IDF Embeddings
+        ↓
+Vector Store
+        ↓
 Similarity Search
-   ↓
-Relevant Context
-   ↓
+        ↓
+Relevant Chunks Retrieved
+        ↓
 Question Generation
+        ↓
+Quiz Interface
+        ↓
+Answer Evaluation
 ```
 
-Technologies used:
+Technologies Used:
 
-* Text chunking
-* Embeddings
-* Vector search
-* RAG
-* Semantic similarity
+* Text Chunking
+* TF-IDF Embeddings
+* Semantic Similarity Search
+* Vector Retrieval
+* Retrieval-Augmented Generation (RAG)
 
-This improves accuracy by generating questions only from the most relevant chunks of the uploaded content.
+This ensures that the generated questions come only from the uploaded content.
 
-## ⚙️ Features Included
+---
 
-* Select number of questions
-* Select question type
-* Select difficulty level
-* All questions displayed at once
-* Scrollable exam-like interface
-* Live progress tracking
-* Sticky submit bar
+# ⚙️ Full Working Pipeline
+
+```text
+1. User enters their name
+2. User uploads a document or pastes notes
+3. Text is extracted from the file
+4. Text is split into smaller chunks
+5. Important topics are detected
+6. Relevant chunks are selected using similarity search
+7. AI generates questions from those chunks
+8. User answers all questions
+9. AI evaluates every answer
+10. Score, rank, analytics, and feedback are displayed
+```
+
+---
+
+# 🤖 AI Model Evolution
+
+The project went through multiple AI model stages before selecting the final one.
+
+---
+
+## Stage 1: Gemini Flash API
+
+Initially tested models:
+
+* Gemini 2.0 Flash
+* Gemini 2.5 Flash
+
+Why Gemini was first used:
+
+* Very fast responses
+* Good for early testing
+* Easy API integration
+* Useful for quickly testing question generation
+
+Problems:
+
+* API quota exceeded frequently
+* Internet connection required
+* API keys could be exposed on GitHub
+* Mentor suggested avoiding frontier API dependency
+* Not suitable for fully open-source offline projects
+
+```text
+Gemini Flash
+     ↓
+Good prototype, not suitable for final project
+```
+
+---
+
+## Stage 2: TinyLlama via Ollama
+
+```js
+const OLLAMA_MODEL = "tinyllama";
+```
+
+Why TinyLlama was tested:
+
+* Very small model
+* Works on low-end laptops
+* No API key required
+* Runs fully offline
+
+Problems:
+
+* Weak reasoning
+* Repeated similar questions
+* Weak long-answer evaluation
+* Sometimes returned invalid JSON
+* Missed important topics in long documents
+
+```text
+TinyLlama
+     ↓
+Offline but not powerful enough
+```
+
+---
+
+## Stage 3: Final Model — Mistral 7B
+
+```js
+const OLLAMA_MODEL = "mistral";
+```
+
+Why Mistral was selected:
+
+* Better reasoning
+* Better topic extraction
+* Better long-answer evaluation
+* Better JSON formatting
+* Better understanding of large documents
+* Runs locally without internet
+
+```text
+Gemini Flash
+      ↓
+TinyLlama
+      ↓
+Mistral 7B (Final)
+```
+
+---
+
+# 📐 Model Comparison
+
+| Model      | Parameters | Approx Size | RAM Needed | Quality |
+| ---------- | ---------- | ----------- | ---------- | ------- |
+| TinyLlama  | 1.1B       | ~1.1 GB     | 2–4 GB     | Low     |
+| Phi-3 Mini | 3.8B       | ~2.3 GB     | 4–6 GB     | Medium  |
+| Mistral 7B | 7B         | ~4–7 GB     | 8–12 GB    | High    |
+| Llama 3 8B | 8B         | ~5–8 GB     | 10–14 GB   | High    |
+
+Mistral gave the best balance between:
+
+* Speed
+* Local execution
+* Accuracy
+* Better long-answer evaluation
+* More reliable question generation
+
+---
+
+# 🧩 Why Ollama Was Used
+
+Ollama allows local LLM execution without using cloud APIs.
+
+Advantages:
+
+* No API cost
+* No quota limit
+* No internet dependency
+* Better privacy
+* No API key exposure
+* Easy switching between models
+
+Current configuration:
+
+```js
+const OLLAMA_BASE = "http://localhost:11434";
+const OLLAMA_MODEL = "mistral";
+```
+
+---
+
+# 📊 Features Included
+
+* Upload and parse documents
+* Paste notes directly
+* AI-generated quiz questions
+* Topic extraction
+* MCQ evaluation
+* Subjective answer evaluation
+* Difficulty selection
+* Sticky submit button
+* Progress tracking
+* Flag question feature
 * Retake quiz option
+* Topic-wise analytics
+* AI-generated recommendations
+* Rank system
 
-## 🤖 AI Evaluation
+---
 
-* MCQs are evaluated instantly
-* Short answers are evaluated together in a single AI request
-* Uses semantic comparison and LLM-based scoring
-* Generates:
+# 📈 Result Dashboard
 
-  * Marks
-  * Explanation
-  * Feedback
-  * Suggestions for improvement
-
-## 📊 Result Dashboard
-
-After submission, the system shows:
+After quiz submission, the dashboard displays:
 
 * Total Score
 * Percentage
-* Grade
-* Rank badge
-* Topic-wise performance
-* Strengths and weak areas
-* Detailed explanation for each answer
-* AI-generated summary personalised to the student
+* Rank
+* Correct / Wrong Count
+* Topic-wise Performance
+* Difficulty-wise Analysis
+* Personalized Feedback
+* Recommendation Section
+* Answer Explanation
 
-## 🏆 Rank Board
+---
+
+# 🏆 Rank System
 
 | Percentage | Rank |
 | ---------- | ---- |
@@ -149,37 +307,29 @@ After submission, the system shows:
 | 40–59%     | D    |
 | Below 40%  | F    |
 
-## 📈 Analytics & Charts
+---
 
-The results page includes:
+# 📊 Analytics Visualizations
 
-* Performance charts
-* Topic-wise bar graph
-* Pie chart for correct vs wrong answers
-* Progress graph
-* Difficulty-wise comparison
-* Rank and score ring visualization
+The result page contains:
 
-## 🐳 Docker Support
-
-The project is containerized using Docker for easy deployment and reproducibility.
-
-```bash
-Docker build → Docker container → Run anywhere
-```
+* Topic-wise Bar Graph
+* Correct vs Wrong Pie Chart
+* Difficulty-wise Score Graph
+* Rank Ring / Progress Circle
+* Recommendation Panel
 
 ---
 
-# 🎨 UI Highlights
+# 🎨 UI / UX Highlights
 
-* Glassmorphism interface
-* Noise texture background
-* Smooth animations
-* Syne + Outfit + DM Mono typography
+* Glassmorphism design
+* Dark futuristic theme
+* Animated gradients
+* Smooth transitions
 * Sticky progress bar
-* Live answered-question counter
-* Beautiful glowing rank badge
 * Responsive design
+* Mobile-friendly layout
 
 ---
 
@@ -189,54 +339,23 @@ Docker build → Docker container → Run anywhere
 
 * React
 * Vite
-* CSS / Custom Animations
+* JavaScript
+* CSS
+* Recharts
 
-🧠 LLM Used:
-- Current prototype uses Gemini 2.0 Flash / Gemini 2.5 Flash for rapid development
-- Final open-source version will use Ollama with Mistral 7B or Llama 3
-- 
-## Backend / AI
-* Mistral 7B or Llama 3
-* Optional prototype: Gemini API during early development
+## AI / NLP
 
-## NLP / Retrieval
+* Ollama
+* Mistral 7B
+* TF-IDF Embeddings
+* Vector Similarity Search
+* RAG Pipeline
 
-* Sentence Transformers
-* FAISS
-* KeyBERT
+## File Processing
 
-## Document Processing
-
-* TXT parsing
-* CSV parsing
-
----
-
-# 🧠 How It Works
-
-```text
-1. User enters name
-2. Uploads a document
-3. Text is extracted
-4. Important topics are detected
-5. Questions are generated
-6. User answers all questions
-7. AI evaluates answers
-8. Score, rank, and feedback are displayed
-```
-
----
-🧠 Workflow
-
-Name Entry → Upload Document → Text Extraction / OCR → RAG Pipeline (Chunking + Embeddings + Vector Search) → Quiz Configuration → AI Question Generation → User Answers → AI Evaluation → Score, Rank & Feedback
-
-# 📂 Supported File Types
-
-| File Type    | Supported  |
-| ------------ | ---------- |
-| TXT          | ✅          |
-| PDF          | ✅          |
-| Pasted Notes | ✅          |
+* TXT Parsing
+* CSV Parsing
+* PDF Parsing
 
 ---
 
@@ -248,43 +367,59 @@ quiz-ai-pro/
 ├── public/
 ├── src/
 │   ├── components/
-│   ├── pages/
 │   ├── utils/
-│   ├── styles/
 │   ├── App.jsx
 │   ├── main.jsx
 │   └── index.css
 │
 ├── docs/
-│   ├── research.md
-│   ├── failed_attempts.md
-│   ├── report.md
-│   └── screenshots/
-│
-├── .env
 ├── package.json
 ├── vite.config.js
-└── README.md
+├── README.md
+└── .env
 ```
 
 ---
 
 # 🔑 Environment Variables
 
-Create a `.env` file in the root directory:
+For Gemini testing only:
 
 ```env
 VITE_GEMINI_API_KEY=your_api_key_here
 ```
 
+Final project using Ollama + Mistral:
+
+```env
+No API key required
+```
+
 ---
 
-# 🚀 Installation
+# 🚀 Installation & Setup
 
 ```bash
 git clone https://github.com/prajwaldiggavi/quiz-ai-pro.git
 cd quiz-ai-pro
 npm install
+```
+
+Install Ollama:
+
+```bash
+ollama pull mistral
+```
+
+Start Ollama:
+
+```bash
+ollama serve
+```
+
+Run the frontend:
+
+```bash
 npm run dev
 ```
 
@@ -296,118 +431,103 @@ http://localhost:5173
 
 ---
 
-# 🌍 Deployment
+# 💻 Example Ollama API Request
 
-This project can be deployed using:
-
-* Vercel
-* Railway
-* Netlify
-
-Production build:
-
-```bash
-npm run build
+```js
+fetch("http://localhost:11434/api/generate", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    model: "mistral",
+    prompt: "Generate 5 MCQ questions from this content...",
+    stream: false
+  })
+});
 ```
 
 ---
 
-# 🔬 Research Findings
+# 🔬 Development Problems & Improvements
 
-Existing platforms such as Quizizz, Kahoot, and Google Forms require manual question creation.
+## Problem 1: One Question at a Time
 
-Limitations found:
+Issue:
 
-* Questions must be created manually
-* No automatic document understanding
-* Weak subjective answer evaluation
-* No detailed AI-generated feedback
-
-QuizAI Pro improves this by:
-
-* Automatically extracting topics
-* Generating questions from study material
-* Evaluating long answers using AI
-* Giving score + explanation + recommendations
-
----
-
-# ❌ Failed Attempts / Iterations
-
-## Attempt 1: One Question at a Time
-
-Initially, the quiz showed one question at a time.
-
-Problems:
-
-* Too many AI requests
+* Too many requests
 * Slow navigation
-* Poor user experience
 
-Improvement:
+Solution:
 
-* Switched to “All Questions at Once” layout
-
----
-
-## Attempt 2: Keyword-Based Evaluation
-
-Initially, answers were checked only using keyword matching.
-
-Problems:
-
-* Different wording was marked wrong
-* Weak subjective answer scoring
-
-Improvement:
-
-* Added semantic evaluation using LLM + embeddings
+* Switched to full-page exam mode
 
 ---
 
-# 📈 Future Improvements
+## Problem 2: Keyword-Based Checking
 
-* OCR for scanned notes
+Issue:
+
+* Correct answers written differently were marked wrong
+
+Solution:
+
+* Added semantic evaluation with LLM + embeddings
+
+---
+
+## Problem 3: Gemini API Limits
+
+Issue:
+
+* API quota exceeded
+* Internet dependency
+
+Solution:
+
+* Replaced with Ollama
+
+---
+
+## Problem 4: TinyLlama Weakness
+
+Issue:
+
+* Weak reasoning and repeated questions
+
+Solution:
+
+* Replaced with Mistral 7B
+
+---
+
+# 📅 Future Scope
+
+* OCR for image-based notes
 * Save quiz history
+* User login system
+* Cloud database support
 * Multi-language support
-* Voice-based quiz answering
-* Difficulty adaptation based on performance
-
----
-
-# 📅 Daily Development Log
-
-Example commit messages:
-
-```text
-Initial repository setup and README
-Added TXT and CSV upload support
-Implemented topic extraction and question generation
-Added all-questions-at-once layout
-Implemented bulk AI evaluation and rank system
-Improved UI animations and sticky progress bar
-Added detailed result summary and recommendations
-```
+* Voice-based answers
+* Adaptive difficulty
+* Leaderboard and achievements
 
 ---
 
 # 👨‍💻 Author
 
-**Prajwal**
+Prajwal Diggavi
 ISE Department, BLDE College
 
-Built as part of an AI Internship Project focused on document-based quiz generation and LLM evaluation.
+Built as part of an AI internship project focused on document-based question generation and LLM-based answer evaluation.
 
 ---
 
-# ⭐ If You Like This Project
+# ⭐ Support
 
-* Star this repository
-* Fork the project
-* Share feedback
+If you like this project:
 
-<div align="center">
-
-### Built with AI, curiosity, and modern web technologies ✨
-
-</div>
+* Star the repository
+* Fork the repository
+* Share your feedback
+* Suggest improvements
