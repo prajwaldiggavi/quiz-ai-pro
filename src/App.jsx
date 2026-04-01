@@ -11,7 +11,7 @@ import {
 //  ollama pull tinyllama
 // ─────────────────────────────────────────────
 const OLLAMA_BASE  = "http://localhost:11434";
-const OLLAMA_MODEL = "tinyllama";
+const OLLAMA_MODEL = "mistral";
 
 async function ollama(prompt, system = "", maxTokens = 2048) {
   const messages = [];
