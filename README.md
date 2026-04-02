@@ -10,6 +10,12 @@ Transform notes, PDFs, and study material into an intelligent quiz platform with
 
 [https://quiz-ai-pro-airowire.vercel.app/](https://quiz-ai-pro-airowire.vercel.app/)
 
+## 🎥 Presentation Video
+
+Watch the complete project presentation here:
+
+👉 https://youtu.be/EjRiwzTNtGI?si=zVjLqxXUo7CZ6GRZ
+
 ---
 
 # 📌 Problem Statement
